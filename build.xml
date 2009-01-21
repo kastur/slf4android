@@ -1,0 +1,70 @@
+<project name="slf4j-on-android" default="build" basedir=".">
+    <description>Build file for SLF4j on Android</description>
+    
+    <property name="src" location="src" />
+    <property name="tmp" location="tmp" />
+    <property name="lib" location="lib" />
+    <property name="javadoc" location="javadoc" />
+    <property name="external" location="external" />
+    <property name="sources" location="sources" />
+
+    <property name="version" value="1.5.5"/>
+
+    <property name="jar" location="${lib}/${ant.project.name}-${version}.jar" />
+    <property name="sources-filename" value="${ant.project.name}-${version}" />
+
+    <property environment="env"/>
+    <property name="android.home" value="${env.ANDROID_HOME}"/>
+
+    <path id="external_jars">
+        <fileset dir="${external}/slf4j-${version}">
+            <include name="slf4j-api-${version}.jar" />
+        </fileset>
+        <fileset dir="${android.home}">
+            <include name="android.jar" />
+        </fileset>
+    </path>
+
+    <target name="build">
+        <!-- Create the build directory structure used by compile -->
+        <delete dir="${lib}" />
+        <delete dir="${tmp}" />
+        <delete dir="${javadoc}" />
+        <delete dir="${sources}" />
+
+        <mkdir dir="${tmp}" />
+        <mkdir dir="${lib}" />
+        <mkdir dir="${javadoc}" />
+        <mkdir dir="${sources}" />
+
+        <!-- Compile the java code from ${src} into ${tmp} -->
+        <javac srcdir="${src}" destdir="${tmp}" debug="on">
+            <classpath refid="external_jars" />
+            <compilerarg value="-Xlint:unchecked" />
+        </javac>
+
+        <!-- create the javadoc -->
+        <javadoc destdir="javadoc" access="public" sourcepath="${src}">
+            <classpath refid="external_jars" />
+            <link href="http://www.slf4j.org/apidocs/" />
+        </javadoc>
+
+        <!-- Put everything in ${tmp} into the jar file -->
+        <jar jarfile="${jar}" basedir="${tmp}" />
+
+        <!-- create a zip file with the sources -->
+        <zip destfile="${sources}/${sources-filename}.zip">
+            <zipfileset dir="src"
+                        includes="**/*.java"
+                        prefix="${sources-filename}" />
+        </zip>
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="${lib}" />
+        <delete dir="${tmp}" />
+        <delete dir="${javadoc}" />
+        <delete dir="${sources}" />
+    </target>
+
+</project>

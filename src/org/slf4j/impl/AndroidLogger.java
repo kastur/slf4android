@@ -36,7 +36,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 			String[] parts = tag.split("\\.");
 			String lastPart = parts[parts.length - 1];
 			if (lastPart.length() < 23) {
-				if ( ( (parts.length-2) * 2 ) + lastPart.length() < 23 ) {
+				if ( ( (parts.length-1) * 2 ) + lastPart.length() <= 23 ) {
 					for (int x=0; x<parts.length - 1; x++) {
 						shortTag.append(parts[x].charAt(0));
 						shortTag.append('.');

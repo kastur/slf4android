@@ -1,28 +1,32 @@
 <project name="slf4j-on-android" default="build" basedir=".">
     <description>Build file for SLF4j on Android</description>
-    
+
     <property name="src" location="src" />
     <property name="tmp" location="tmp" />
+    <property name="bin" location="bin" />
     <property name="lib" location="lib" />
     <property name="javadoc" location="javadoc" />
     <property name="external" location="external" />
     <property name="sources" location="sources" />
 
-    <property name="version" value="1.5.5"/>
+    <property name="slf-version" value="1.5.5"/>
 
-    <property name="jar" location="${lib}/${ant.project.name}-${version}.jar" />
-    <property name="sources-filename" value="${ant.project.name}-${version}" />
+    <property name="jar" location="${lib}/${ant.project.name}-${slf-version}.jar" />
+    <property name="sources-filename" value="${ant.project.name}-${slf-version}" />
 
     <property environment="env"/>
     <property name="android.home" value="${env.ANDROID_HOME}"/>
 
+    <!-- Is the android.jar in an old style SDK or a new one? -->
+    <available file="${android.home}/android.jar" property="android.jar" value="${android.home}/android.jar" />
+    <available file="${android.home}/platforms/android-1.1/android.jar" property="android.jar" value="${android.home}/platforms/android-1.1/android.jar" />
+    <fail message="Unable to find android.jar" unless="android.jar" />
+
     <path id="external_jars">
-        <fileset dir="${external}/slf4j-${version}">
-            <include name="slf4j-api-${version}.jar" />
+        <fileset dir="${external}/slf4j-${slf-version}">
+            <include name="slf4j-api-${slf-version}.jar" />
         </fileset>
-        <fileset dir="${android.home}">
-            <include name="android.jar" />
-        </fileset>
+	<fileset file="${android.jar}" />
     </path>
 
     <target name="build">
@@ -38,13 +42,13 @@
         <mkdir dir="${sources}" />
 
         <!-- Compile the java code from ${src} into ${tmp} -->
-        <javac srcdir="${src}" destdir="${tmp}" debug="on">
+        <javac srcdir="${src}" destdir="${tmp}" target="1.5" debug="on">
             <classpath refid="external_jars" />
             <compilerarg value="-Xlint:unchecked" />
         </javac>
 
         <!-- create the javadoc -->
-        <javadoc destdir="javadoc" access="public" sourcepath="${src}">
+        <javadoc destdir="javadoc" access="public" sourcepath="${src}" >
             <classpath refid="external_jars" />
             <link href="http://www.slf4j.org/apidocs/" />
         </javadoc>
@@ -65,6 +69,7 @@
         <delete dir="${tmp}" />
         <delete dir="${javadoc}" />
         <delete dir="${sources}" />
+	<delete dir="${bin}" />
     </target>
 
 </project>

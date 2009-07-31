@@ -72,7 +72,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	private final int level;
 
-	private static final int DISABLED = 0;
+	// private static final int DISABLED = 0;
 	private static final int TRACE = 1;
 	private static final int DEBUG = 2;
 	private static final int INFO = 3;
@@ -131,7 +131,8 @@ public class AndroidLogger extends MarkerIgnoringBase {
 			Properties props = new java.util.Properties();
 			try {
 				props.load(in);
-				for (Enumeration names = props.propertyNames(); names.hasMoreElements();) {
+				for (Enumeration<?> names = props.propertyNames(); names
+						.hasMoreElements();) {
 					String name = (String)names.nextElement();
 					// What level is this?
 					int value = parseLevel(props.getProperty(name));
@@ -167,8 +168,6 @@ public class AndroidLogger extends MarkerIgnoringBase {
     /**
      * Package access allows only {@link AndroidLoggerFactory} to instantiate
      * AndroidLogger instances.
-	 *
-     * @return
      */
     AndroidLogger(String tag) {
 		// Android only supports tags of length <= 23

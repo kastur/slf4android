@@ -1,14 +1,13 @@
 package org.slf4j.impl;
 
-import org.slf4j.helpers.MarkerIgnoringBase;
-import org.slf4j.helpers.MessageFormatter;
-
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import java.io.InputStream;
-import java.io.IOException;
+import org.slf4j.helpers.MarkerIgnoringBase;
+import org.slf4j.helpers.MessageFormatter;
 
 import android.util.Log;
 
@@ -285,7 +284,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
     public void info(String arg0, Throwable arg1) {
 		if (isInfoEnabled())
-			Log.i(tag, MessageFormatter.format(arg0, arg1));
+			Log.i(tag, arg0, arg1);
     }
 
     public void info(String arg0, Object arg1, Object arg2) {
@@ -330,7 +329,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
     public void trace(String arg0, Throwable arg1) {
 		if (isTraceEnabled())
-			Log.v(tag, MessageFormatter.format(arg0, arg1));
+			Log.v(tag, arg0, arg1);
     }
 
     public void trace(String arg0, Object arg1, Object arg2) {
@@ -350,12 +349,12 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
     public void warn(String arg0, Object[] arg1) {
 		if (isWarnEnabled())
-			Log.w(tag, MessageFormatter.format(arg0, arg1));
+			Log.w(tag, MessageFormatter.arrayFormat(arg0, arg1));
     }
 
     public void warn(String arg0, Throwable arg1) {
 		if (isWarnEnabled())
-			Log.w(tag, MessageFormatter.format(arg0, arg1));
+			Log.w(tag, arg0, arg1);
     }
 
     public void warn(String arg0, Object arg1, Object arg2) {

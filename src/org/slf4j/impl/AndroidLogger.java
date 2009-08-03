@@ -47,6 +47,10 @@ import android.util.Log;
  * lowest level specified in the file will be used except
  * for the default where the last instance in the file will be used.
  * </p>
+ * <p>It is also possible to ask this logger to check the android
+ * log level by adding "android.util.Log.check=true" to your
+ * properties file.
+ * </p>
  * <p>We search for this properties file in the root of your JAR,
  * in the META-INF directory then the org/slf4j directory then
  * org/slf4j/impl directory and stop searching as soon as we
@@ -78,7 +82,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	private static final int INFO = 3;
 	private static final int WARN = 4;
 	private static final int ERROR = 5;
-	private static final int DEFAULT_LOG_LEVEL = INFO;
+	private static final int DEFAULT_LOG_LEVEL = DISABLED;
 
 	private static int sDefaultLevel = DEFAULT_LOG_LEVEL;
 
@@ -92,6 +96,9 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	private static final ArrayList<String> levelLists[] = new ArrayList[5];
 
 	private static final String DEFAULT_LEVEL_NAME = "default.log.level";
+	private static final String ANDROID_LEVEL_CHECK = "check.android.level";
+
+	private static boolean ignoreAndroidLevel = true;
 
 	private static int parseLevel(String levelName) {
 		for (int i = 0; i < levels.length; i++) {
@@ -134,6 +141,9 @@ public class AndroidLogger extends MarkerIgnoringBase {
 				for (Enumeration<?> names = props.propertyNames(); names
 						.hasMoreElements();) {
 					String name = (String)names.nextElement();
+					if (name.equals(ANDROID_LEVEL_CHECK)) {
+						ignoreAndroidLevel = !Boolean.parseBoolean(props.getProperty(name));
+					}
 					// What level is this?
 					int value = parseLevel(props.getProperty(name));
 					if (value >= 0) {
@@ -292,23 +302,23 @@ public class AndroidLogger extends MarkerIgnoringBase {
     }
 
     public boolean isDebugEnabled() {
-		return this.level <= DEBUG && Log.isLoggable(tag, Log.DEBUG);
+		return this.level <= DEBUG && (ignoreAndroidLevel || Log.isLoggable(tag, Log.DEBUG));
     }
 
     public boolean isErrorEnabled() {
-		return this.level <= ERROR && Log.isLoggable(tag, Log.ERROR);
+		return this.level <= ERROR && (ignoreAndroidLevel || Log.isLoggable(tag, Log.ERROR));
     }
 
     public boolean isInfoEnabled() {
-        return this.level <= INFO && Log.isLoggable(tag, Log.INFO);
+        return this.level <= INFO && (ignoreAndroidLevel || Log.isLoggable(tag, Log.INFO));
     }
 
     public boolean isTraceEnabled() {
-        return this.level <= TRACE && Log.isLoggable(tag, Log.VERBOSE);
+        return this.level <= TRACE && (ignoreAndroidLevel || Log.isLoggable(tag, Log.VERBOSE));
     }
 
     public boolean isWarnEnabled() {
-        return this.level <= WARN && Log.isLoggable(tag, Log.WARN);
+        return this.level <= WARN && (ignoreAndroidLevel || Log.isLoggable(tag, Log.WARN));
     }
 
     public void trace(String arg0) {

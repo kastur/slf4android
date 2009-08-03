@@ -76,7 +76,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	private final int level;
 
-	// private static final int DISABLED = 0;
+	private static final int DISABLED = 0;
 	private static final int TRACE = 1;
 	private static final int DEBUG = 2;
 	private static final int INFO = 3;

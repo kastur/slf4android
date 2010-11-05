@@ -38,11 +38,11 @@ import android.util.Log;
  * <p>
  * To configure this logger you can include an SLF4J.properties file in your apk
  * with lines of the form:
- * 
+ *
  * <pre>
  * &lt;package&gt;.&lt;class&gt;=&lt;level&gt;
  * </pre>
- * 
+ *
  * where level is one of: 'disabled', 'trace', 'debug', 'info', 'warn' or
  * 'error'<br/>
  * You may also include a 'default.log.level=<level>' line to set the default
@@ -117,7 +117,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	 * logger that can do some filtering. We thus use a property file in the
 	 * form class.path.Class=level where level is one of "disabled", "trace",
 	 * "debug", "info", "warn" or "error";
-	 * 
+	 *
 	 * If you're going to release your application you can include an empty
 	 * NOSLF4J.java in your source. This will turn off logging and increase
 	 * performance.
@@ -322,27 +322,27 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	}
 
 	public boolean isDebugEnabled() {
-		return this.level <= DEBUG
+		return this.level >= DEBUG
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.DEBUG));
 	}
 
 	public boolean isErrorEnabled() {
-		return this.level <= ERROR
+		return this.level >= ERROR
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.ERROR));
 	}
 
 	public boolean isInfoEnabled() {
-		return this.level <= INFO
+		return this.level >= INFO
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.INFO));
 	}
 
 	public boolean isTraceEnabled() {
-		return this.level <= TRACE
+		return this.level >= TRACE
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.VERBOSE));
 	}
 
 	public boolean isWarnEnabled() {
-		return this.level <= WARN
+		return this.level >= WARN
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.WARN));
 	}
 

@@ -16,10 +16,14 @@
 
     <property environment="env"/>
     <property name="android.home" value="${env.ANDROID_HOME}"/>
+	<!-- Default android version is 8 currently.
+		This relies on properties being immutable in ant so won't override if set in the env already -->
+	<property name="env.ANDROID_VERSION" value="8"/>
+	<property name="android.version" value="${env.ANDROID_VERSION}"/>
 
     <!-- Is the android.jar in an old style SDK or a new one? -->
     <available file="${android.home}/android.jar" property="android.jar" value="${android.home}/android.jar" />
-    <available file="${android.home}/platforms/android-1.1/android.jar" property="android.jar" value="${android.home}/platforms/android-1.1/android.jar" />
+    <available file="${android.home}/platforms/android-${android.version}/android.jar" property="android.jar" value="${android.home}/platforms/android-8/android.jar" />
     <fail message="Unable to find android.jar" unless="android.jar" />
 
     <path id="external_jars">

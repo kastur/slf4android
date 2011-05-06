@@ -9,11 +9,11 @@ import org.slf4j.Logger;
 public class AndroidLoggerFactory implements ILoggerFactory {
     final static AndroidLoggerFactory SINGLETON = new AndroidLoggerFactory();
 
-    @SuppressWarnings("unchecked")
-    Map loggerMap;
+    @SuppressWarnings("rawtypes")
+	Map loggerMap;
 
-    @SuppressWarnings("unchecked")
-    private AndroidLoggerFactory() {
+    @SuppressWarnings("rawtypes")
+	private AndroidLoggerFactory() {
         loggerMap = new HashMap();
     }
 

@@ -272,12 +272,12 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	public void debug(String arg0, Object arg1) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag : "") + MessageFormatter.format(arg0, arg1));
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
 	}
 
 	public void debug(String arg0, Object[] arg1) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag : "") + MessageFormatter.arrayFormat(arg0, arg1));
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.arrayFormat(arg0, arg1));
 	}
 
 	public void debug(String arg0, Throwable arg1) {
@@ -287,7 +287,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	public void debug(String arg0, Object arg1, Object arg2) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag : "") + MessageFormatter.format(arg0, arg1, arg2));
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1, arg2));
 	}
 
 	public void error(String arg0) {
@@ -297,12 +297,12 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	public void error(String arg0, Object arg1) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag : "") + MessageFormatter.format(arg0, arg1));
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
 	}
 
 	public void error(String arg0, Object[] arg1) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag : "") + MessageFormatter.arrayFormat(arg0, arg1));
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.arrayFormat(arg0, arg1));
 	}
 
 	public void error(String arg0, Throwable arg1) {

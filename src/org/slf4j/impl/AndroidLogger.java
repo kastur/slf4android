@@ -93,6 +93,14 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	 */
 	private final String tag;
 
+	/**
+	 * In prepend mode we use this
+	 */
+	private final String prependTag;
+
+	/**
+	 * The level this logger is working at
+	 */
 	private final int level;
 
 
@@ -109,7 +117,7 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	private static boolean sForcePrependTag = false;
 
 	private static final String[] levels = { "disabled", "trace", "debug",
-			"info", "warn", "error"};
+		"info", "warn", "error"};
 	private static final String sConfigFile = "SLF4J.properties";
 
 	// This is dumb. You can't have an array of generics?
@@ -154,24 +162,24 @@ public class AndroidLogger extends MarkerIgnoringBase {
 			Log.d(SLF4J_TAG, "Trying to load properties from: " + sConfigFile);
 			InputStream in = AndroidLogger.class.getClassLoader()
 					.getResourceAsStream(sConfigFile);
-//			if (in == null) {
-//				Log.d(SLF4J_TAG, "Trying to load from: " + "META-INF/"
-//						+ sConfigFile);
-//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
-//						"META-INF/" + sConfigFile);
-//			}
-//			if (in == null) {
-//				Log.d(SLF4J_TAG, "Trying to load from: " + "org/slf4j/"
-//						+ sConfigFile);
-//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
-//						"org/slf4j/" + sConfigFile);
-//			}
-//			if (in == null) {
-//				Log.d(SLF4J_TAG, "Trying to load from: " + "org/slf4j/impl/"
-//						+ sConfigFile);
-//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
-//						"org/slf4j/impl/" + sConfigFile);
-//			}
+			//			if (in == null) {
+			//				Log.d(SLF4J_TAG, "Trying to load from: " + "META-INF/"
+			//						+ sConfigFile);
+			//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
+			//						"META-INF/" + sConfigFile);
+			//			}
+			//			if (in == null) {
+			//				Log.d(SLF4J_TAG, "Trying to load from: " + "org/slf4j/"
+			//						+ sConfigFile);
+			//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
+			//						"org/slf4j/" + sConfigFile);
+			//			}
+			//			if (in == null) {
+			//				Log.d(SLF4J_TAG, "Trying to load from: " + "org/slf4j/impl/"
+			//						+ sConfigFile);
+			//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
+			//						"org/slf4j/impl/" + sConfigFile);
+			//			}
 			if (null != in) {
 				Log.d(SLF4J_TAG, "Loading properties...");
 				Properties props = new java.util.Properties();
@@ -259,6 +267,21 @@ public class AndroidLogger extends MarkerIgnoringBase {
 			this.tag = tag;
 		}
 
+		if (sForcePrependTag) {
+			StringBuffer spaces = new StringBuffer(this.tag);
+
+			for (int i = 0; i < 23 - this.tag.length(); i++) {
+				spaces.append(' ');
+			}
+			spaces.append(':');
+			spaces.append(' ');
+
+			this.prependTag = spaces.toString();
+			Log.d(SLF4J_TAG,"Prepend Tag: " + this.prependTag);
+		} else {
+			this.prependTag = "";
+		}
+
 		// Now to figure out what level this should be at
 		// We take the lowest level we can find and run with it
 		int foundLevel = -1;
@@ -283,77 +306,77 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	public void debug(String arg0) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0);
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
 	}
 
 	public void debug(String arg0, Object arg1) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
 	}
 
 	public void debug(String arg0, Object[] arg1) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.arrayFormat(arg0, arg1));
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
 	}
 
 	public void debug(String arg0, Throwable arg1) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0, arg1);
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
 	}
 
 	public void debug(String arg0, Object arg1, Object arg2) {
 		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1, arg2));
+			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
 	}
 
 	public void error(String arg0) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0);
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
 	}
 
 	public void error(String arg0, Object arg1) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
 	}
 
 	public void error(String arg0, Object[] arg1) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.arrayFormat(arg0, arg1));
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
 	}
 
 	public void error(String arg0, Throwable arg1) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0, arg1);
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
 	}
 
 	public void error(String arg0, Object arg1, Object arg2) {
 		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1, arg1));
+			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg1).getMessage());
 	}
 
 	public void info(String arg0) {
 		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0);
+			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
 	}
 
 	public void info(String arg0, Object arg1) {
 		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
+			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
 	}
 
 	public void info(String arg0, Object[] arg1) {
 		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
+			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
 	}
 
 	public void info(String arg0, Throwable arg1) {
 		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0, arg1);
+			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
 	}
 
 	public void info(String arg0, Object arg1, Object arg2) {
 		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1, arg2));
+			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
 	}
 
 	public boolean isDebugEnabled() {
@@ -383,52 +406,52 @@ public class AndroidLogger extends MarkerIgnoringBase {
 
 	public void trace(String arg0) {
 		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0);
+			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
 	}
 
 	public void trace(String arg0, Object arg1) {
 		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
+			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
 	}
 
 	public void trace(String arg0, Object[] arg1) {
 		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.arrayFormat(arg0, arg1));
+			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
 	}
 
 	public void trace(String arg0, Throwable arg1) {
 		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0, arg1);
+			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
 	}
 
 	public void trace(String arg0, Object arg1, Object arg2) {
 		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1, arg2));
+			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
 	}
 
 	public void warn(String arg0) {
 		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0);
+			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
 	}
 
 	public void warn(String arg0, Object arg1) {
 		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1));
+			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
 	}
 
 	public void warn(String arg0, Object[] arg1) {
 		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.arrayFormat(arg0, arg1));
+			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
 	}
 
 	public void warn(String arg0, Throwable arg1) {
 		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + arg0, arg1);
+			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
 	}
 
 	public void warn(String arg0, Object arg1, Object arg2) {
 		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? tag +": " : "") + MessageFormatter.format(arg0, arg1, arg2));
+			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
 	}
 
 }

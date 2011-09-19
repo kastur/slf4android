@@ -55,9 +55,25 @@ import android.util.Log;
  * adding "android.util.Log.check=true" to your properties file.
  * </p>
  * <p>
+ * It is also possible to have all log statements forced into a single tag
+ * for your application using:<br/>
+ * force.tag=true<br/>
+ * With this option we suggest adding:<br/>
+ * force.tag.prepend=true<br/>
+ * Which will make all logged statements include what the log tag would have
+ * been at the start of the log line.
+ * </p>
+ * <p>
  * We search for this properties file in the root of your JAR, in the META-INF
  * directory then the org/slf4j directory then org/slf4j/impl directory and stop
- * searching as soon as we find one.
+ * searching as soon as we find one, but  this process can take time
+ * so we suggest placing it in the root of your jar.
+ * </p>
+ * <p>
+ * Finally, it is possible to efficiently disable all logging entirely
+ * by including a class named NOSLF4J in the default package in which case
+ * we will disable all logging without checking for log properties. This
+ * is perfect for a production environment.
  * </p>
  **/
 public class AndroidLogger extends MarkerIgnoringBase {

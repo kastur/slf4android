@@ -64,10 +64,7 @@ import android.util.Log;
  * been at the start of the log line.
  * </p>
  * <p>
- * We search for this properties file in the root of your JAR, in the META-INF
- * directory then the org/slf4j directory then org/slf4j/impl directory and stop
- * searching as soon as we find one, but  this process can take time
- * so we suggest placing it in the root of your jar.
+ * We search for this properties file in the root of your JAR.
  * </p>
  * <p>
  * Finally, it is possible to efficiently disable all logging entirely
@@ -78,63 +75,101 @@ import android.util.Log;
  **/
 public class AndroidLogger extends MarkerIgnoringBase {
 
+	/** The name of the properties file. */
+	private static final String CONFIG_FILE_NAME = "SLF4J.properties";
+
+	/** The length for half a tag we are cutting in the middle. */
+	private static final int	HALF_TAG_LENGTH	= 10;
+
+	/** The maximum length allowed for an Android log tag. */
+	private static final int	MAX_LOG_TAG	= 23;
+
 	/**
-	 * Serial Version ID
+	 * Serial Version ID.
 	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Log tag for SLF4J itself
+	 * Log tag for SLF4J itself.
 	 **/
 	private static final String SLF4J_TAG = "slf4j";
 
 	/**
-	 * The tag this logger will log with
+	 * The tag this logger will log with.
 	 */
 	private final String tag;
 
 	/**
-	 * In prepend mode we use this
+	 * In prepend mode we use this.
 	 */
 	private final String prependTag;
 
 	/**
-	 * The level this logger is working at
+	 * The level this logger is working at.
 	 */
 	private final int level;
 
-
+	/** Trace log level. */
 	private static final int TRACE = 1;
+	/** Debug log level. */
 	private static final int DEBUG = 2;
+	/** Info log level. */
 	private static final int INFO = 3;
+	/** Warn log level. */
 	private static final int WARN = 4;
+	/** Error log level. */
 	private static final int ERROR = 5;
+	/** Disabled log level. */
 	private static final int DISABLED = 0;
+	/** The default log level is DISABLED. */
 	private static final int DEFAULT_LOG_LEVEL = DISABLED;
+	/** Log Levels > ERROR are invalid. */
+	private static final int INVALID_LEVEL = ERROR + 1;
 
+	/** The default level for all loggers. */
 	private static int sDefaultLevel = DEFAULT_LOG_LEVEL;
+	/** A static forced tag so all logging goes to the same tag. */
 	private static String sForceTag = null;
+	/** Force the real tag to prepend to the message. */
 	private static boolean sForcePrependTag = false;
 
-	private static final String[] levels = { "disabled", "trace", "debug",
+	/** String equivalents of log levels. */
+	private static final String[] LEVEL_NAMES = { "disabled", "trace", "debug",
 		"info", "warn", "error"};
-	private static final String sConfigFile = "SLF4J.properties";
 
+	/**
+	 * The levels for various tags parsed from the configuration file.
+	 */
 	// This is dumb. You can't have an array of generics?
 	@SuppressWarnings("unchecked")
-	private static final ArrayList<String> levelLists[] = new ArrayList[6];
+	private static final ArrayList<String>[] TAG_LEVELS =
+		new ArrayList[LEVEL_NAMES.length];
 
+	/** Property with default log level: default.log.level. */
 	private static final String DEFAULT_LEVEL_NAME = "default.log.level";
+	/** Property for triggering check android level: check.android.level. */
 	private static final String ANDROID_LEVEL_CHECK = "check.android.level";
+	/** Property for a forced tag: force.tag. */
 	private static final String FORCE_TAG = "force.tag";
+	/**
+	 * Property for prepending the real tag if force.tag is set:
+	 * force.tag.prepend.
+	 */
 	private static final String FORCE_PREPEND_TAG = "force.tag.prepend";
 
-
+	/**
+	 * Should we ignore android level?
+	 */
 	private static boolean ignoreAndroidLevel = true;
 
-	private static int parseLevel(String levelName) {
-		for (int i = 0; i < levels.length; i++) {
-			if (levels[i].equals(levelName)) {
+	/**
+	 * Parses a level name into the numeric equivalent.
+	 * @param levelName the name to parse
+	 * @return the level or -1 if it can not be parsed
+	 */
+	private static int parseLevel(final String levelName) {
+		for (int i = 0; i < LEVEL_NAMES.length; i++) {
+			if (LEVEL_NAMES[i].equals(levelName)) {
 				return i;
 			}
 		}
@@ -155,31 +190,13 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	static {
 		try {
 			Class.forName("NOSLF4J");
-			System.err.println("SLF4J Disabled.");
 			sDefaultLevel = DISABLED;
 		} catch (ClassNotFoundException classNotFoundException) {
 			// Load and parse the properties.
-			Log.d(SLF4J_TAG, "Trying to load properties from: " + sConfigFile);
+			Log.d(SLF4J_TAG, "Trying to load properties from: "
+			+ CONFIG_FILE_NAME);
 			InputStream in = AndroidLogger.class.getClassLoader()
-					.getResourceAsStream(sConfigFile);
-			//			if (in == null) {
-			//				Log.d(SLF4J_TAG, "Trying to load from: " + "META-INF/"
-			//						+ sConfigFile);
-			//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
-			//						"META-INF/" + sConfigFile);
-			//			}
-			//			if (in == null) {
-			//				Log.d(SLF4J_TAG, "Trying to load from: " + "org/slf4j/"
-			//						+ sConfigFile);
-			//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
-			//						"org/slf4j/" + sConfigFile);
-			//			}
-			//			if (in == null) {
-			//				Log.d(SLF4J_TAG, "Trying to load from: " + "org/slf4j/impl/"
-			//						+ sConfigFile);
-			//				in = AndroidLogger.class.getClassLoader().getResourceAsStream(
-			//						"org/slf4j/impl/" + sConfigFile);
-			//			}
+					.getResourceAsStream(CONFIG_FILE_NAME);
 			if (null != in) {
 				Log.d(SLF4J_TAG, "Loading properties...");
 				Properties props = new java.util.Properties();
@@ -194,14 +211,19 @@ public class AndroidLogger extends MarkerIgnoringBase {
 							continue;
 						}
 						if (name.equals(FORCE_PREPEND_TAG)) {
-							sForcePrependTag = Boolean.parseBoolean(props.getProperty(name));
-							Log.d(SLF4J_TAG, "Set force prepend tag to: " + sForcePrependTag);
+							sForcePrependTag =
+									Boolean.parseBoolean(
+											props.getProperty(name));
+							Log.d(SLF4J_TAG,
+									"Set force prepend tag to:"
+											+ sForcePrependTag);
 							continue;
 						}
 						if (name.equals(ANDROID_LEVEL_CHECK)) {
 							ignoreAndroidLevel = !Boolean.parseBoolean(props
 									.getProperty(name));
-							Log.d(SLF4J_TAG, "Set ignore android level to: " + ignoreAndroidLevel);
+							Log.d(SLF4J_TAG, "Set ignore android level to:"
+									+ ignoreAndroidLevel);
 							continue;
 						}
 						// What level is this?
@@ -209,16 +231,16 @@ public class AndroidLogger extends MarkerIgnoringBase {
 						if (value >= 0) {
 							if (DEFAULT_LEVEL_NAME.equals(name)) {
 								Log.d(SLF4J_TAG, "Setting default level to: "
-										+ levels[value]);
+										+ LEVEL_NAMES[value]);
 								sDefaultLevel = value;
 							} else {
 								// Add it to the list for that level.
 								Log.d(SLF4J_TAG, "Setting level for: " + name
-										+ " to: " + levels[value]);
-								if (levelLists[value] == null) {
-									levelLists[value] = new ArrayList<String>();
+										+ " to: " + LEVEL_NAMES[value]);
+								if (TAG_LEVELS[value] == null) {
+									TAG_LEVELS[value] = new ArrayList<String>();
 								}
-								levelLists[value].add(name);
+								TAG_LEVELS[value].add(name);
 							}
 						} else {
 							Log.w(SLF4J_TAG, "Unknown level for: " + name
@@ -239,17 +261,19 @@ public class AndroidLogger extends MarkerIgnoringBase {
 	/**
 	 * Package access allows only {@link AndroidLoggerFactory} to instantiate
 	 * AndroidLogger instances.
+	 * @param loggerTag the tag for this logger
 	 */
-	AndroidLogger(String tag) {
+	AndroidLogger(final String loggerTag) {
 		// Android only supports tags of length <= 23
-		if (tag.length() > 23) {
+		if (loggerTag.length() > MAX_LOG_TAG) {
 			// We try to do something smart here to shorten
 			StringBuffer shortTag = new StringBuffer();
-			String[] parts = tag.split("\\.");
+			String[] parts = loggerTag.split("\\.");
 			String lastPart = parts[parts.length - 1];
 			// Can we use the whole last part?
-			if (lastPart.length() < 23) {
-				if (((parts.length - 1) * 2) + lastPart.length() <= 23) {
+			if (lastPart.length() < MAX_LOG_TAG) {
+				if (((parts.length - 1) * 2) + lastPart.length()
+						<= MAX_LOG_TAG) {
 					for (int x = 0; x < parts.length - 1; x++) {
 						shortTag.append(parts[x].charAt(0));
 						shortTag.append('.');
@@ -257,27 +281,30 @@ public class AndroidLogger extends MarkerIgnoringBase {
 				}
 				shortTag.append(lastPart);
 			} else {
-				shortTag.append(lastPart.substring(0, 10));
+				shortTag.append(lastPart.substring(0,
+						HALF_TAG_LENGTH));
 				shortTag.append("...");
-				shortTag.append(lastPart.substring(lastPart.length() - 10));
+				shortTag.append(lastPart.substring(
+						lastPart.length() - HALF_TAG_LENGTH));
 			}
 			this.tag = shortTag.toString();
-			Log.d(SLF4J_TAG, "Tag: " + tag + " shortened to: " + this.tag);
+			Log.d(SLF4J_TAG, "Tag: " + loggerTag
+					+ " shortened to: " + this.tag);
 		} else {
-			this.tag = tag;
+			this.tag = loggerTag;
 		}
 
 		if (sForcePrependTag) {
 			StringBuffer spaces = new StringBuffer(this.tag);
 
-			for (int i = 0; i < 23 - this.tag.length(); i++) {
+			for (int i = 0; i < MAX_LOG_TAG - this.tag.length(); i++) {
 				spaces.append(' ');
 			}
 			spaces.append(':');
 			spaces.append(' ');
 
 			this.prependTag = spaces.toString();
-			Log.d(SLF4J_TAG,"Prepend Tag: " + this.prependTag);
+			Log.d(SLF4J_TAG, "Prepend Tag: " + this.prependTag);
 		} else {
 			this.prependTag = "";
 		}
@@ -285,173 +312,289 @@ public class AndroidLogger extends MarkerIgnoringBase {
 		// Now to figure out what level this should be at
 		// We take the lowest level we can find and run with it
 		int foundLevel = -1;
-		for (int i = 0; i < levelLists.length; i++) {
-			if (levelLists[i] != null) {
-				if (levelLists[i].contains(this.tag)
-						|| levelLists[i].contains(tag)) {
+		for (int i = 0; i < TAG_LEVELS.length; i++) {
+			if (TAG_LEVELS[i] != null) {
+				if (TAG_LEVELS[i].contains(this.tag)
+						|| TAG_LEVELS[i].contains(loggerTag)) {
 					foundLevel = i;
 					break;
 				}
 			}
 		}
-		if (foundLevel < 0 || foundLevel == 6) {
+		if (foundLevel < 0 || foundLevel == INVALID_LEVEL) {
 			this.level = sDefaultLevel;
 		} else {
 			this.level = foundLevel;
 		}
-		Log.d(SLF4J_TAG,"Level for: " + this.tag + " set to: " + this.level);
 		Log.d(SLF4J_TAG, "Level for: " + this.tag + " set to: "
-				+ levels[this.level]);
+				+ LEVEL_NAMES[this.level]);
 	}
 
-	public void debug(String arg0) {
-		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
+	/**
+	 * @param message the message to prepend to
+	 * @return the string with possible tag prepened.
+	 */
+	private String getPrepend(final String message) {
+		if (sForcePrependTag) {
+			return prependTag + message;
+		}
+		return message;
 	}
 
-	public void debug(String arg0, Object arg1) {
-		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
+	/**
+	 * @param message the message to format
+	 * @param parameter the parameter to the message
+	 * @return the formatted message possibly with tag prepended.
+	 */
+	private String getPrepend(final String message, final Object parameter) {
+		String formatted =
+				MessageFormatter.format(message, parameter).getMessage();
+		return getPrepend(formatted);
 	}
 
-	public void debug(String arg0, Object[] arg1) {
-		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
+	/**
+	 * @param message the message to format
+	 * @param parameters the parameters for the message
+	 * @return the formatted message with possible prepended tag
+	 */
+	private String getPrepend(final String message, final Object[] parameters) {
+		String formatted =
+				MessageFormatter.arrayFormat(message, parameters).getMessage();
+		return getPrepend(formatted);
 	}
 
-	public void debug(String arg0, Throwable arg1) {
-		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
+	/**
+	 * @param message the message to format
+	 * @param firstParam first message parameter
+	 * @param secondParam second message parameter
+	 * @return the formatted message with possible prepended tag
+	 */
+	private String getPrepend(final String message,
+			final Object firstParam, final Object secondParam) {
+		String formatted =
+				MessageFormatter.format(message,
+						firstParam, secondParam).getMessage();
+		return getPrepend(formatted);
 	}
 
-	public void debug(String arg0, Object arg1, Object arg2) {
-		if (isDebugEnabled())
-			Log.d(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
+	/**
+	 * @return the tag for this logger.
+	 */
+	private String getTag() {
+		if (sForceTag != null) {
+			return sForceTag;
+		}
+		return tag;
 	}
 
-	public void error(String arg0) {
-		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
+	@Override
+	public final void debug(final String message) {
+		if (isDebugEnabled()) {
+			Log.d(getTag(), getPrepend(message));
+		}
 	}
 
-	public void error(String arg0, Object arg1) {
-		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
+	@Override
+	public final void debug(final String arg0, final Object arg1) {
+		if (isDebugEnabled()) {
+			Log.d(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void error(String arg0, Object[] arg1) {
-		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
+	@Override
+	public final void debug(final String arg0, final Object[] arg1) {
+		if (isDebugEnabled()) {
+			Log.d(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void error(String arg0, Throwable arg1) {
-		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
+	@Override
+	public final void debug(final String arg0, final Throwable arg1) {
+		if (isDebugEnabled()) {
+			Log.d(getTag(), getPrepend(arg0), arg1);
+		}
 	}
 
-	public void error(String arg0, Object arg1, Object arg2) {
-		if (isErrorEnabled())
-			Log.e(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg1).getMessage());
+	@Override
+	public final void debug(final String arg0, final Object arg1,
+			final Object arg2) {
+		if (isDebugEnabled()) {
+			Log.d(getTag(), getPrepend(arg0, arg1, arg2));
+		}
 	}
 
-	public void info(String arg0) {
-		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
+	@Override
+	public final void error(final String arg0) {
+		if (isErrorEnabled()) {
+			Log.e(getTag(), getPrepend(arg0));
+		}
 	}
 
-	public void info(String arg0, Object arg1) {
-		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
+	@Override
+	public final void error(final String arg0, final Object arg1) {
+		if (isErrorEnabled()) {
+			Log.e(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void info(String arg0, Object[] arg1) {
-		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
+	@Override
+	public final void error(final String arg0, final Object[] arg1) {
+		if (isErrorEnabled()) {
+			Log.e(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void info(String arg0, Throwable arg1) {
-		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
+	@Override
+	public final void error(final String arg0, final Throwable arg1) {
+		if (isErrorEnabled()) {
+			Log.e(getTag(), getPrepend(arg0), arg1);
+		}
 	}
 
-	public void info(String arg0, Object arg1, Object arg2) {
-		if (isInfoEnabled())
-			Log.i(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
+	@Override
+	public final void error(final String arg0, final Object arg1,
+			final Object arg2) {
+		if (isErrorEnabled()) {
+			Log.e(getTag(), getPrepend(arg0, arg1, arg1));
+		}
 	}
 
-	public boolean isDebugEnabled() {
+	@Override
+	public final void info(final String arg0) {
+		if (isInfoEnabled()) {
+			Log.i(getTag(), getPrepend(arg0));
+		}
+	}
+
+	@Override
+	public final void info(final String arg0, final Object arg1) {
+		if (isInfoEnabled()) {
+			Log.i(getTag(), getPrepend(arg0, arg1));
+		}
+	}
+
+	@Override
+	public final void info(final String arg0, final Object[] arg1) {
+		if (isInfoEnabled()) {
+			Log.i(getTag(), getPrepend(arg0, arg1));
+		}
+	}
+
+	@Override
+	public final void info(final String arg0, final Throwable arg1) {
+		if (isInfoEnabled()) {
+			Log.i(getTag(), getPrepend(arg0), arg1);
+		}
+	}
+
+	@Override
+	public final void info(final String arg0, final Object arg1,
+			final Object arg2) {
+		if (isInfoEnabled()) {
+			Log.i(getTag(), getPrepend(arg0, arg1, arg2));
+		}
+	}
+
+	@Override
+	public final boolean isDebugEnabled() {
 		return this.level <= DEBUG
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.DEBUG));
 	}
 
-	public boolean isErrorEnabled() {
+	@Override
+	public final boolean isErrorEnabled() {
 		return this.level <= ERROR
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.ERROR));
 	}
 
-	public boolean isInfoEnabled() {
+	@Override
+	public final boolean isInfoEnabled() {
 		return this.level <= INFO
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.INFO));
 	}
 
-	public boolean isTraceEnabled() {
+	@Override
+	public final boolean isTraceEnabled() {
 		return this.level <= TRACE
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.VERBOSE));
 	}
 
-	public boolean isWarnEnabled() {
+	@Override
+	public final boolean isWarnEnabled() {
 		return this.level <= WARN
 				&& (ignoreAndroidLevel || Log.isLoggable(tag, Log.WARN));
 	}
 
-	public void trace(String arg0) {
-		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
+	@Override
+	public final void trace(final String arg0) {
+		if (isTraceEnabled()) {
+			Log.v(getTag(), getPrepend(arg0));
+		}
 	}
 
-	public void trace(String arg0, Object arg1) {
-		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
+	@Override
+	public final void trace(final String arg0, final Object arg1) {
+		if (isTraceEnabled()) {
+			Log.v(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void trace(String arg0, Object[] arg1) {
-		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
+	@Override
+	public final void trace(final String arg0, final Object[] arg1) {
+		if (isTraceEnabled()) {
+			Log.v(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void trace(String arg0, Throwable arg1) {
-		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
+	@Override
+	public final void trace(final String arg0, final Throwable arg1) {
+		if (isTraceEnabled()) {
+			Log.v(getTag(), getPrepend(arg0), arg1);
+		}
 	}
 
-	public void trace(String arg0, Object arg1, Object arg2) {
-		if (isTraceEnabled())
-			Log.v(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
+	@Override
+	public final void trace(final String arg0, final Object arg1,
+			final Object arg2) {
+		if (isTraceEnabled()) {
+			Log.v(getTag(), getPrepend(arg0, arg1, arg2));
+		}
 	}
 
-	public void warn(String arg0) {
-		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0);
+	@Override
+	public final void warn(final String arg0) {
+		if (isWarnEnabled()) {
+			Log.w(getTag(), getPrepend(arg0));
+		}
 	}
 
-	public void warn(String arg0, Object arg1) {
-		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1).getMessage());
+	@Override
+	public final void warn(final String arg0, final Object arg1) {
+		if (isWarnEnabled()) {
+			Log.w(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void warn(String arg0, Object[] arg1) {
-		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.arrayFormat(arg0, arg1).getMessage());
+	@Override
+	public final void warn(final String arg0, final Object[] arg1) {
+		if (isWarnEnabled()) {
+			Log.w(getTag(), getPrepend(arg0, arg1));
+		}
 	}
 
-	public void warn(String arg0, Throwable arg1) {
-		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + arg0, arg1);
+	@Override
+	public final void warn(final String arg0, final Throwable arg1) {
+		if (isWarnEnabled()) {
+			Log.w(getTag(), getPrepend(arg0), arg1);
+		}
 	}
 
-	public void warn(String arg0, Object arg1, Object arg2) {
-		if (isWarnEnabled())
-			Log.w(sForceTag == null ? tag : sForceTag, (sForcePrependTag ? prependTag : "") + MessageFormatter.format(arg0, arg1, arg2).getMessage());
+	@Override
+	public final void warn(final String arg0, final Object arg1,
+			final Object arg2) {
+		if (isWarnEnabled()) {
+			Log.w(getTag(), getPrepend(arg0, arg1, arg2));
+		}
 	}
 
 }

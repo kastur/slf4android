@@ -6,21 +6,38 @@ import java.util.Map;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 
-public class AndroidLoggerFactory implements ILoggerFactory {
-	final static AndroidLoggerFactory SINGLETON = new AndroidLoggerFactory();
+/**
+ * The logger factory for Android loggers.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
+public final class AndroidLoggerFactory implements ILoggerFactory {
+	/**
+	 * The singleton factory instance.
+	 */
+	static final AndroidLoggerFactory SINGLETON = new AndroidLoggerFactory();
 
+	/**
+	 * The map with all loggers.
+	 */
 	@SuppressWarnings("rawtypes")
-	Map loggerMap;
+	private final Map loggerMap;
 
-	@SuppressWarnings("rawtypes") AndroidLoggerFactory() {
+	/**
+	 * Constructor for the singleton.
+	 */
+	@SuppressWarnings("rawtypes")
+	private AndroidLoggerFactory() {
 		loggerMap = new HashMap();
 	}
 
 	/**
-	 * Return an appropriate {@link AndroidLogger} instance by name.
+	 * @param name the tag for this logger
+	 * @return an appropriate {@link AndroidLogger} instance by name.
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
-	public Logger getLogger(String name) {
+	public Logger getLogger(final String name) {
 		Logger slogger = null;
 		// protect against concurrent access of the loggerMap
 		synchronized (this) {
